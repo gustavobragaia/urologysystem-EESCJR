@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -v \"^\\\\.$\")",
+      "Bash(grep -v \"^\\\\.\\\\.$\")",
+      "Bash(npm install *)",
+      "Bash(npm list *)",
+      "Bash(npx shadcn@latest add sonner --yes)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:3000/api/health)",
+      "Bash(kill %1)",
+      "Read(//tmp/**)",
+      "Bash(mkdir -p /Users/gustavobragaia/Documents/UrologiaDrRomuloFinal/backend/assets)",
+      "Bash(cp /Users/gustavobragaia/Documents/UrologiaDrRomuloFinal/frontend/public/urologistaromulo-logo.svg /Users/gustavobragaia/Documents/UrologiaDrRomuloFinal/backend/assets/logo.svg)"
+    ]
+  }
+}

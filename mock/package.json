@@ -1,0 +1,12 @@
+{
+  "name": "esp32-mock",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "tsx esp32-mock.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.16.0",
+    "typescript": "^5.4.0"
+  }
+}
