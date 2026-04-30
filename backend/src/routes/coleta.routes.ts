@@ -4,18 +4,17 @@ import { authMiddleware } from '../middleware/auth.middleware';
 import { authQueryMiddleware } from '../middleware/auth-query.middleware';
 import { coletaRateLimit } from '../middleware/rateLimit.middleware';
 import { validate } from '../middleware/validate.middleware';
-import { processarExame } from '../services/processamento.service';
+import { processarExame, payloadEsp32Schema } from '../services/processamento.service';
 import { salvarExame } from '../services/exame.service';
 import {
   registrarSessao,
   notificarExamePronto,
   cancelarSessao,
   listarSessoes,
-  obterSessao,
 } from '../services/sse.service';
 import { db } from '../db';
 import { exames, pacientes, leituras } from '../db/schema';
-import { eq, and, isNull } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
 const router = Router();
 
@@ -41,13 +40,14 @@ const router = Router();
  *       200:
  *         description: Exame recebido
  */
-router.post('/dados', coletaRateLimit, async (req, res, next) => {
+router.post('/dados', coletaRateLimit, validate(payloadEsp32Schema), async (req, res, next) => {
   try {
     const { metricas, leiturasTruncadas } = processarExame(req.body);
 
-    // Verificar se há sessão SSE ativa
-    const sessoes = listarSessoes();
-    const sessaoAtiva = sessoes[0]; // Único médico, única sessão possível por vez
+    const sessoesAtivas = listarSessoes();
+    const sessaoAtiva = sessoesAtivas[0] ?? null;
+
+    console.log(`[/dados] sessões SSE ativas: ${sessoesAtivas.length}`, sessaoAtiva ? `→ paciente ${sessaoAtiva.pacienteId}` : '→ sem sessão (órfão)');
 
     let medicoId: string;
     let pacienteId: string | null = null;
@@ -56,19 +56,14 @@ router.post('/dados', coletaRateLimit, async (req, res, next) => {
       medicoId = sessaoAtiva.medicoId;
       pacienteId = sessaoAtiva.pacienteId;
     } else {
-      // Órfão — sem sessão ativa. Usar medicoId default (único médico no sistema).
-      // O médico vinculará depois pela rota /vincular.
-      // Como não temos medicoId sem sessão, precisamos de um fallback.
-      // Buscar o médico do paciente não é possível sem pacienteId.
-      // Salvaremos como órfão sem medicoId temporariamente — será vinculado depois.
-      // Usamos um UUID fixo que será atualizado na vinculação.
-      medicoId = '00000000-0000-0000-0000-000000000000'; // placeholder — atualizado na vinculação
+      medicoId = '00000000-0000-0000-0000-000000000000';
     }
 
     const exameId = await salvarExame({ medicoId, pacienteId, metricas, leiturasArray: leiturasTruncadas });
 
     if (sessaoAtiva && pacienteId) {
-      notificarExamePronto(pacienteId, exameId);
+      const notificado = notificarExamePronto(pacienteId, exameId);
+      console.log(`[/dados] notificarExamePronto → ${notificado ? 'OK' : 'FALHOU (sessão já encerrada)'}`);
     }
 
     res.json({
@@ -77,6 +72,14 @@ router.post('/dados', coletaRateLimit, async (req, res, next) => {
       status: pacienteId ? 'vinculado' : 'orfao',
     });
   } catch (err) {
+    if (err instanceof Error && err.message.startsWith('Exame inválido')) {
+      res.status(422).json({
+        error: 'Validation Error',
+        message: err.message,
+        code: 'no_positive_flow',
+      });
+      return;
+    }
     next(err);
   }
 });
@@ -200,10 +203,8 @@ router.post('/vincular', authMiddleware, validate(vincularSchema), async (req, r
  *     summary: Lista exames órfãos do médico
  *     tags: [Coleta]
  */
-router.get('/orfaos', authMiddleware, async (req, res, next) => {
+router.get('/orfaos', authMiddleware, async (_req, res, next) => {
   try {
-    const medicoId = req.user!.id;
-
     const orfaos = await db
       .select({
         id: exames.id,

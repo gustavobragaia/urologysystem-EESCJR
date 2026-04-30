@@ -110,12 +110,11 @@ function arredondar(valor: number, casas: number): number {
   return Math.round(valor * fator) / fator;
 }
 
-// Pipeline completo: payload bruto → métricas + leituras truncadas
-export function processarExame(payloadBruto: unknown): {
+// Pipeline: payload já validado (pelo middleware validate) → métricas + leituras truncadas
+export function processarExame(payload: LeituraEsp32[]): {
   metricas: MetricasCalculadas;
   leiturasTruncadas: LeituraEsp32[];
 } {
-  const payload = payloadEsp32Schema.parse(payloadBruto);
   const leiturasTruncadas = truncarLeiturasReais(payload);
   const metricas = calcularMetricas(leiturasTruncadas);
   return { metricas, leiturasTruncadas };
