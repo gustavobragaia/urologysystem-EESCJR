@@ -1,7 +1,7 @@
 version: '3.9'
 services:
   backend:
-    image: ghcr.io/SEU_USUARIO/urofluxometria-backend:latest
+    image: ghcr.io/gustavobragaia/urofluxometria-backend:latest
     container_name: urofluxometria-backend
     restart: unless-stopped
     ports:
