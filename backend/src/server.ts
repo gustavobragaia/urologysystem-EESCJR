@@ -13,6 +13,7 @@ import coletaRoutes from './routes/coleta.routes';
 
 const app = express();
 
+app.set('trust proxy', 1);
 app.use(helmet());
 const allowedOrigins = [env.FRONTEND_URL, env.FRONTEND_URL.replace('://', '://www.')];
 app.use(cors({ origin: allowedOrigins, credentials: true }));
