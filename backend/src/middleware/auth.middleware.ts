@@ -9,13 +9,15 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
   }
 
   const token = authHeader.slice(7);
-  const { data, error } = await supabaseAdmin.auth.getUser(token);
-
-  if (error || !data.user) {
+  try {
+    const { data, error } = await supabaseAdmin.auth.getUser(token);
+    if (error || !data.user) {
+      res.status(401).json({ error: 'Unauthorized', message: 'Token inválido ou expirado' });
+      return;
+    }
+    req.user = data.user;
+    next();
+  } catch {
     res.status(401).json({ error: 'Unauthorized', message: 'Token inválido ou expirado' });
-    return;
   }
-
-  req.user = data.user;
-  next();
 }
