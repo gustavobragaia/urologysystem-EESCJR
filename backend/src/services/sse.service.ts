@@ -27,7 +27,7 @@ export function registrarSessao(pacienteId: string, medicoId: string, res: Respo
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache, no-transform');
   res.setHeader('Connection', 'keep-alive');
-  res.setHeader('X-Accel-Buffering', 'no'); // Crítico para nginx/Caddy não bufferizar
+  res.setHeader('X-Accel-Buffering', 'no');
   res.flushHeaders();
 
   // Evento inicial para confirmar ao frontend
@@ -46,10 +46,19 @@ export function registrarSessao(pacienteId: string, medicoId: string, res: Respo
 
   sessoes.set(pacienteId, { res, medicoId, pacienteId, iniciadoEm: new Date(), pingInterval });
 
-  // Cleanup quando o cliente desconecta
+  console.log(`[SSE] Sessão registrada — pacienteId: ${pacienteId}, total ativo: ${sessoes.size}`);
+
+  // Cleanup quando o cliente desconecta.
+  // Guarda referência local a 'res' para evitar race condition:
+  // se uma nova sessão for registrada antes deste close disparar,
+  // não deletamos a nova sessão.
   res.on('close', () => {
     clearTimeout(timeoutId);
-    finalizarSessao(pacienteId);
+    const sessaoAtual = sessoes.get(pacienteId);
+    if (sessaoAtual && sessaoAtual.res === res) {
+      finalizarSessao(pacienteId);
+      console.log(`[SSE] Sessão encerrada — pacienteId: ${pacienteId}`);
+    }
   });
 }
 

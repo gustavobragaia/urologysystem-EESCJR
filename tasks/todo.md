@@ -260,18 +260,36 @@ A fase é considerada completa quando:
 
 ---
 
-## Review (preencher após execução)
-
-> Esta seção deve ser preenchida pelo Sonnet após terminar todas as fases.
+## Review
 
 ### O que foi feito
-- (descrever)
+- `processamento.service.ts`: removido `payloadEsp32Schema.parse(payloadBruto)` interno; assinatura trocada para `payload: LeituraEsp32[]`
+- `coleta.routes.ts`: adicionado `payloadEsp32Schema` ao import; adicionado `validate(payloadEsp32Schema)` na cadeia da rota `/dados`; adicionado branch `startsWith('Exame inválido')` no catch para retornar 422 + `code: "no_positive_flow"`
+- `docs/firmware-integration.md`: criado (pré-existia na branch, commitado junto)
+- `tasks/todo.md`: este arquivo, commitado junto
 
 ### Desvios do plano
-- (se houver — caso contrário, "nenhum")
+- Edição 2.3 não pôde ser feita com string simples (4 matches do padrão); usou contexto maior para identificar o catch correto do handler `/dados`.
+- Teste "não-JSON" retornou `500` em vez de `400` esperado no plano — comportamento pré-existente do `express.json()` nesta configuração (SyntaxError cai no errorMiddleware). Fora do escopo do fix.
 
-### Resultado dos testes
-- (colar saída relevante de cada curl da fase 3.2 e 4.3)
+### Resultado dos testes (localhost:3000)
+
+| Teste | HTTP esperado | HTTP obtido | Resultado |
+|---|---|---|---|
+| Caminho feliz | 200 | 200 | ✅ |
+| Schema inválido (`Fl: "abc"`) | 422 | 422 | ✅ |
+| Array vazio | 422 | 422 | ✅ |
+| Sem fluxo positivo | 422 | 422 | ✅ |
+| Não-JSON | 400 | 500 | ⚠️ pré-existente |
+
+```
+200 {"exameId":"f670ef66-...","pacienteId":null,"status":"orfao"}
+422 {"error":"Validation Error","message":"Dados de entrada inválidos","details":{"formErrors":[],"fieldErrors":{"0":["Fl deve ser numérico com casas decimais"]}}}
+422 {"error":"Validation Error","message":"Dados de entrada inválidos","details":{"formErrors":["Payload vazio"],"fieldErrors":{}}}
+422 {"error":"Validation Error","message":"Exame inválido: nenhum fluxo positivo detectado","code":"no_positive_flow"}
+500 {"error":"Internal Server Error","message":"Unexpected token 'i', \"isto nao e JSON\" is not valid JSON"}
+```
 
 ### Lições para `tasks/lessons.md`
-- (se algo correu de forma inesperada)
+- Ao editar arquivos com padrões repetidos, sempre fornecer contexto suficiente para ser único (linhas antes/depois do alvo).
+- `fieldErrors` do Zod para arrays usa a key do índice (`"0"`) e não `"0.Fl"` como o plano estimava — isso não afeta o firmware, que precisa apenas checar o status 422.

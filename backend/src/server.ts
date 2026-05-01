@@ -14,7 +14,8 @@ import coletaRoutes from './routes/coleta.routes';
 const app = express();
 
 app.use(helmet());
-app.use(cors({ origin: env.FRONTEND_URL, credentials: true }));
+const allowedOrigins = [env.FRONTEND_URL, env.FRONTEND_URL.replace('://', '://www.')];
+app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json({ limit: '1mb' }));
 app.use(globalRateLimit);
 
