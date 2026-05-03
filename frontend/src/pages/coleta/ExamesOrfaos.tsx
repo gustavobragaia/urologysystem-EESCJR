@@ -51,9 +51,9 @@ export function ExamesOrfaos() {
       {!isLoading && data?.exames.map((exame) => (
         <Card key={exame.id} className="shadow-card">
           <CardContent className="p-4">
-            <div className="flex items-start gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
               {/* Mini-gráfico */}
-              <div className="w-24 h-10 shrink-0">
+              <div className="w-full h-12 sm:w-24 sm:h-10 shrink-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={exame.leiturasPreview}>
                     <Line
@@ -77,10 +77,10 @@ export function ExamesOrfaos() {
               </div>
 
               {/* Ações */}
-              <div className="flex gap-2 shrink-0">
+              <div className="flex gap-2 shrink-0 w-full sm:w-auto">
                 <Button
                   size="sm"
-                  className="bg-primary hover:bg-primary-dark text-white"
+                  className="bg-primary hover:bg-primary-dark text-white flex-1 sm:flex-none"
                   onClick={() => setModalExameId(exame.id)}
                 >
                   <LinkIcon className="w-3.5 h-3.5 mr-1" />

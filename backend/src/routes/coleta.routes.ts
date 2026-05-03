@@ -14,7 +14,7 @@ import {
 } from '../services/sse.service';
 import { db } from '../db';
 import { exames, pacientes, leituras } from '../db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 
 const router = Router();
 
@@ -214,7 +214,8 @@ router.get('/orfaos', authMiddleware, async (_req, res, next) => {
         tempoTotalMiccao: exames.tempoTotalMiccao,
       })
       .from(exames)
-      .where(eq(exames.statusVinculacao, 'orfao'));
+      .where(eq(exames.statusVinculacao, 'orfao'))
+      .orderBy(desc(exames.dataExame));
 
     // Buscar preview de leituras para cada exame órfão
     const orfaosComPreview = await Promise.all(
