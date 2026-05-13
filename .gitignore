@@ -6,3 +6,5 @@ dist
 .DS_Store
 *.log
 urologia-context
+BUILD.md
+claude.md
